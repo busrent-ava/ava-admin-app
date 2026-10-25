@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>AVA Admin</title>
+<script src="config.js"></script>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--pri:#0f172a;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1}
+header button{background:transparent;border:1px solid #475569;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px}
+main{padding:12px;max-width:760px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:none;padding:10px 4px;font-size:12px;color:var(--mut)}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--pri);font-weight:700}
+.card{background:var(--card);border-radius:14px;padding:14px;margin:0 0 10px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.card h3{margin:0 0 2px;font-size:17px}
+.muted{color:var(--mut);font-size:14px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.tile{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tile b{display:block;font-size:24px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:#e2e8f0;color:#334155}
+.tag.ok{background:#dcfce7;color:#166534}.tag.warn{background:#fef3c7;color:#92400e}.tag.bad{background:#fee2e2;color:#991b1b}.tag.blue{background:#dbeafe;color:#1e40af}
+input,select,textarea{width:100%;font:inherit;padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;margin:4px 0 10px}
+label{font-size:13px;color:var(--mut)}
+button.big{width:100%;border:0;border-radius:12px;padding:13px;font-weight:600;font-size:16px;font-family:inherit;background:var(--pri);color:#fff;margin-top:4px}
+button.ghost{background:#fff;color:var(--ink);border:1px solid #cbd5e1}
+button.red{background:var(--bad)}
+button.sm{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:7px 10px;font-size:14px}
+button.sm.red{background:#fff;color:var(--bad);border-color:#fecaca}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px}
+.seg button{flex:none;border:1px solid #cbd5e1;background:#fff;border-radius:99px;padding:7px 13px;font-size:14px}
+.seg button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.photo{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-top:8px;background:#e2e8f0;cursor:zoom-in}
+.amt{float:right;font-weight:700;font-size:18px}
+.empty{text-align:center;color:var(--mut);padding:24px}
+#login{max-width:340px;margin:12vh auto;padding:0 16px;text-align:center}
+#modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
+#modal .sheet{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:10px}
+#lb img{max-width:100%;max-height:80vh;border-radius:8px}
+#lb a,#lb button{color:#fff;margin-top:14px;font-size:16px;background:none;border:1px solid #fff;border-radius:10px;padding:8px 16px;text-decoration:none}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:40;max-width:90%}
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:16px 4px 8px}
+</style>
+</head>
+<body>
+<header><h1>AVA Admin</h1><button id="refr" style="display:none" onclick="reload()">Refresh</button><button id="out" style="display:none" onclick="logout()">Log out</button></header>
+<main id="main"></main>
+<nav id="nav" style="display:none">
+  <button data-t="today" class="on" onclick="tab('today')"><span>📊</span>Today</button>
+  <button data-t="entries" onclick="tab('entries')"><span>🧾</span>Entries</button>
+  <button data-t="trips" onclick="tab('trips')"><span>🚌</span>Trips</button>
+  <button data-t="drivers" onclick="tab('drivers')"><span>👤</span>Drivers</button>
+</nav>
+<div id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet" id="sheet"></div></div>
+<div id="lb" onclick="if(event.target===this)closeLb()"></div>
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const money = n => 'AED ' + (+n || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const todayStr = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const daysAgo = n => new Date(Date.now() - n * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+let DRV = [], PIN = store.get('ava_admin_pin') || '', TAB = 'today', LISTS = null;
+let F = {kind: 'Expense', driver: '', from: daysAgo(7), to: todayStr()};
+
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3200)}
+async function api(fn, ...args){
+  if (!window.AVA_API || /PASTE_/.test(window.AVA_API)) throw new Error('App is not set up: add the Apps Script URL in config.js');
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 60000);
+  let j;
+  try {
+    const res = await fetch(window.AVA_API, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({fn, args}), redirect: 'follow', signal: ctl.signal});
+    j = await res.json();
+  } catch(e) {throw new Error('Network error. Check your internet and try again.')}
+  finally {clearTimeout(timer)}
+  if (!j.ok) throw new Error(j.error || 'Error');
+  return j.data;
+}
+const call = (fn, ...a) => api(fn, PIN, ...a);
+const loading = () => $('main').innerHTML = '<div class="empty">Loading…</div>';
+function fail(e){const m = e.message || String(e); if (/Wrong office PIN/.test(m)) return logout(true); $('main').innerHTML = `<div class="card"><h3>Could not load</h3><div class="muted">${esc(m)}</div><button class="big" onclick="reload()">Try again</button></div>`; }
+
+/* ---------- login ---------- */
+function loginView(msg){
+  $('nav').style.display = 'none'; $('out').style.display = 'none'; $('refr').style.display = 'none';
+  $('main').innerHTML = `<div id="login"><div style="font-size:48px">🔐</div><h2>Office login</h2>
+    <input id="pin" type="password" placeholder="Office PIN" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="big" onclick="doLogin()">Log in</button>${msg ? `<p class="muted" style="color:var(--bad)">${esc(msg)}</p>` : ''}</div>`;
+}
+async function doLogin(){
+  const p = $('pin').value.trim(); if (!p) return;
+  try {await api('adminLogin', p); PIN = p; store.set('ava_admin_pin', p); start()}
+  catch(e) {loginView(e.message)}
+}
+function logout(silent){PIN = ''; store.del('ava_admin_pin'); loginView(silent ? 'Session ended. Log in again.' : '')}
+function start(){$('nav').style.display = 'flex'; $('out').style.display = ''; $('refr').style.display = ''; tab('today')}
+function tab(t){
+  TAB = t;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  reload();
+}
+function reload(){
+  loading();
+  ({today: todayView, entries: entriesView, trips: tripsView, drivers: driversView})[TAB]().catch(fail);
+}
+
+/* ---------- Today ---------- */
+async function todayView(){
+  const d = await call('adminOverview'), s = d.summary;
+  const tile = (n, l, c) => `<div class="tile"><b style="${c ? 'color:' + c : ''}">${n}</b><span class="muted">${l}</span></div>`;
+  DRV = d.drivers;
+  const cards = d.drivers.map((x, i) => {
+    const ci = x.checkIn, t = x.trips;
+    let st = !x.Active ? '<span class="tag">Inactive</span>' : t.inProgress ? '<span class="tag blue">On a trip</span>' : ci ? '<span class="tag ok">Checked in</span>' : '<span class="tag warn">Not checked in</span>';
+    return `<div class="card" onclick="openDriver(DRV[${i}].Name)">
+      <span style="float:right">${st}</span><h3>${esc(x.Name)}</h3>
+      <div class="muted">${ci ? `Bus ${esc(ci.Bus)} · ${ci.Odometer.toLocaleString()} km · ${esc(ci.Time)}` : 'No check-in today'}</div>
+      <div class="muted">Trips: ${t.inProgress} in progress · ${t.scheduled} waiting · ${t.completed} done today</div>
+      <div class="muted">Spent today: ${money(x.spendToday)}</div>
+      <div class="muted">Last activity: ${x.lastActivity ? esc(x.lastActivity) : 'none yet'}</div></div>`;
+  }).join('');
+  $('main').innerHTML = `<div class="tiles">
+    ${tile(s.checkedIn + ' / ' + s.active, 'Drivers checked in', s.checkedIn < s.active ? 'var(--warn)' : 'var(--ok)')}
+    ${tile(s.tripsInProgress, 'Trips in progress')}
+    ${tile(money(s.spendToday).replace('AED ', ''), 'Spent today (AED)')}
+    ${tile(s.issuesToday, 'Problems reported', s.issuesToday ? 'var(--bad)' : '')}</div>
+    <h2 class="sec">Drivers · ${esc(d.today)}</h2>` + (cards || '<div class="empty">No drivers yet. Add one in the Drivers tab.</div>');
+}
+function openDriver(name){F.driver = name; F.kind = 'Expense'; F.from = daysAgo(7); F.to = todayStr(); tab('entries')}
+
+/* ---------- Entries (all details + receipts) ---------- */
+const KINDS = [['Expense', 'Expenses'], ['CheckIn', 'Check-ins'], ['ExtraTrip', 'Extra trips'], ['Issues', 'Problems'], ['Feedback', 'Feedback']];
+function thumb(url, w){const m = String(url || '').match(/\/d\/([\w-]+)/) || String(url || '').match(/[?&]id=([\w-]+)/); return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w${w || 900}` : ''}
+function photo(url, label){
+  if (!url) return '';
+  const t = thumb(url); if (!t) return '';
+  return `<img class="photo" loading="lazy" src="${t}" alt="${esc(label)}" onclick="showPhoto('${esc(url)}','${t.replace(/w\d+$/, 'w1800')}')">`;
+}
+function showPhoto(orig, big){$('lb').innerHTML = `<img src="${big}" alt=""><a href="${orig}" target="_blank" rel="noopener">Open original</a><button onclick="closeLb()">Close</button>`; $('lb').style.display = 'flex'}
+function closeLb(){$('lb').style.display = 'none'}
+function entryCard(k, r){
+  const head = `<div class="muted">${esc(r.Date)} ${esc(r.Time)} · ${esc(r.Driver)}${r.Bus ? ' · Bus ' + esc(r.Bus) : ''}</div>`;
+  const warn = (r.PhotoWarn ? `<div><span class="tag warn">Photo: ${esc(r.PhotoWarn)}</span></div>` : '') + (r.PhotoFailed ? '<div><span class="tag bad">Photo failed to upload</span></div>' : '');
+  if (k === 'Expense') {
+    const fuel = r.Category === 'Fuel';
+    return `<div class="card"><span class="amt">${money(r.Total)}</span><h3>${esc(r.Category)}</h3>${head}
+      ${fuel ? `<div class="muted">${esc(r.Liters)} L × AED ${esc(r.Price)} · Odometer ${esc(r.Odometer)} km</div>` : ''}
+      ${r.Notes ? `<div>${esc(r.Notes)}</div>` : ''}${warn}${photo(r.Receipt, 'Receipt')}${!r.Receipt && !r.PhotoFailed ? '<div class="muted">No receipt photo</div>' : ''}</div>`;
+  }
+  if (k === 'CheckIn') return `<div class="card"><h3>Check-in · ${(+r.Odometer || 0).toLocaleString()} km</h3>${head}${warn}${photo(r.OdoPhoto, 'Odometer')}</div>`;
+  if (k === 'ExtraTrip') return `<div class="card"><h3>${esc(r.From)} → ${esc(r.To)}</h3>${head}<div>${esc(r.Description)}</div>${r.Details ? `<div class="muted">${esc(r.Details)}</div>` : ''}</div>`;
+  if (k === 'Issues') return `<div class="card" style="border-left:4px solid var(--bad)"><h3>Problem reported</h3>${head}<div>${esc(r.Issue)}</div></div>`;
+  return `<div class="card"><h3>Feedback</h3>${head}<div>${esc(r.Message)}</div><div class="muted">Screen: ${esc(r.Screen)} · ${esc(r.Version)}</div>${r.Errors ? `<div class="muted">Errors: ${esc(r.Errors)}</div>` : ''}</div>`;
+}
+async function entriesView(){
+  if (!LISTS) LISTS = await call('adminLists');
+  const d = await call('adminEntries', F.kind, F.driver, F.from, F.to);
+  $('main').innerHTML = `<div class="seg">${KINDS.map(([k, l]) => `<button class="${F.kind === k ? 'on' : ''}" onclick="F.kind='${k}';reload()">${l}</button>`).join('')}</div>
+    <div class="card"><div class="filters">
+      <div><label>Driver</label><select onchange="F.driver=this.value;reload()"><option value="">All drivers</option>${LISTS.drivers.map(x => `<option ${x.Name === F.driver ? 'selected' : ''}>${esc(x.Name)}</option>`).join('')}</select></div>
+      <div><label>Quick range</label><select onchange="quick(this.value)"><option value="">Custom</option><option value="0">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select></div>
+      <div><label>From</label><input type="date" value="${F.from}" onchange="F.from=this.value;reload()"></div>
+      <div><label>To</label><input type="date" value="${F.to}" onchange="F.to=this.value;reload()"></div></div></div>
+    <div class="muted" style="margin:0 4px 8px">${d.count} entr${d.count === 1 ? 'y' : 'ies'}${F.kind === 'Expense' ? ' · Total ' + money(d.total) : ''}${d.count > 200 ? ' (showing newest 200)' : ''}</div>`
+    + (d.rows.length ? d.rows.map(r => entryCard(F.kind, r)).join('') : '<div class="empty">Nothing found for these filters.</div>');
+}
+function quick(n){if (n === '') return; F.from = daysAgo(+n); F.to = todayStr(); reload()}
+
+/* ---------- Trips ---------- */
+async function tripsView(){
+  if (!LISTS) LISTS = await call('adminLists');
+  const T = await call('adminTrips');
+  const cls = s => s === 'In Progress' ? 'blue' : s === 'Completed' ? 'ok' : 'warn';
+  $('main').innerHTML = `<button class="big" onclick="tripForm()">➕ Assign a new trip</button><h2 class="sec">Trips</h2>` + (T.length ? T.map(t => `<div class="card">
+    <span style="float:right"><span class="tag ${cls(t.Status)}">${esc(t.Status)}</span></span><h3>${esc(t.Customer)}</h3>
+    <div class="muted">${esc(t.Date)} ${esc(t['Start Time'])} · ${esc(t.Driver)} · Bus ${esc(t.Bus)}</div>
+    <div>${esc(t['Start Location'])} → ${esc(t['End Location'])}</div>
+    ${t['End Time'] ? `<div class="muted">Finished ${esc(t['End Time'])}${t['Distance (km)'] ? ' · ' + esc(t['Distance (km)']) + ' km' : ''}</div>` : ''}
+    ${t.Status !== 'Completed' ? `<div style="margin-top:8px"><button class="sm red" onclick="delTrip('${esc(t.ID)}')">Delete trip</button></div>` : ''}</div>`).join('') : '<div class="empty">No trips yet.</div>');
+}
+function tripForm(){
+  const opt = a => a.map(x => `<option>${esc(x)}</option>`).join('');
+  openModal(`<h3>Assign trip</h3>
+    <label>Customer / trip name</label><input id="t_c">
+    <div class="row"><div><label>Date</label><input id="t_d" type="date" value="${todayStr()}"></div><div><label>Start time</label><input id="t_t" type="time"></div></div>
+    <label>Driver</label><select id="t_dr">${opt(LISTS.drivers.filter(x => x.Active).map(x => x.Name))}</select>
+    <label>Bus</label><select id="t_b">${opt(LISTS.buses)}</select>
+    <label>From</label><input id="t_f"><label>To</label><input id="t_to">
+    <button class="big" onclick="saveTrip()">Save trip</button><button class="big ghost" onclick="closeModal()">Cancel</button>`);
+}
+async function saveTrip(){
+  const t = {Customer: $('t_c').value.trim(), Date: $('t_d').value, 'Start Time': $('t_t').value, Driver: $('t_dr').value, Bus: $('t_b').value, 'Start Location': $('t_f').value.trim(), 'End Location': $('t_to').value.trim()};
+  try {await call('adminTripAdd', t); closeModal(); toast('Trip assigned'); reload()} catch(e) {toast(e.message)}
+}
+async function delTrip(id){
+  if (!confirm('Delete this trip?')) return;
+  try {await call('adminTripDelete', id); toast('Trip deleted'); reload()} catch(e) {toast(e.message)}
+}
+
+/* ---------- Drivers & buses ---------- */
+async function driversView(){
+  LISTS = await call('adminLists');
+  $('main').innerHTML = `<button class="big" onclick="driverForm()">➕ Add driver</button><h2 class="sec">Drivers (${LISTS.drivers.length})</h2>` +
+    (LISTS.drivers.map((d, i) => `<div class="card"><span style="float:right"><span class="tag ${d.Active ? 'ok' : ''}">${d.Active ? 'Active' : 'Inactive'}</span></span>
+      <h3>${esc(d.Name)}</h3><div class="muted">PIN: ${esc(d.PIN)}</div>
+      <div class="row" style="margin-top:8px"><button class="sm" onclick="driverForm(${i})">Edit</button><button class="sm" onclick="openDriver(LISTS.drivers[${i}].Name)">Entries</button><button class="sm red" onclick="rmDriver(${i})">Remove</button></div></div>`).join('') || '<div class="empty">No drivers yet.</div>') +
+    `<h2 class="sec">Buses (${LISTS.buses.length})</h2><div class="card">${LISTS.buses.map((b, i) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>🚌 ${esc(b)}</span><span style="text-align:right;flex:none"><button class="sm red" onclick="rmBus(${i})">Remove</button></span></div>`).join('') || '<div class="muted">No buses yet.</div>'}
+      <div class="row" style="margin-top:10px"><input id="nb" placeholder="New bus number" style="margin:0"><button class="sm" style="flex:none;padding:11px 14px" onclick="addBus()">Add</button></div></div>`;
+}
+function driverForm(i){
+  const d = i === undefined ? {Name: '', PIN: '', Active: true} : LISTS.drivers[i];
+  openModal(`<h3>${i === undefined ? 'Add driver' : 'Edit driver'}</h3>
+    <label>Driver name</label><input id="d_n" value="${esc(d.Name)}">
+    <label>PIN (4 to 8 digits, the driver logs in with this)</label><input id="d_p" inputmode="numeric" maxlength="8" value="${esc(d.PIN)}">
+    <label>Status</label><select id="d_a"><option value="1" ${d.Active ? 'selected' : ''}>Active</option><option value="0" ${d.Active ? '' : 'selected'}>Inactive (cannot log in)</option></select>
+    <button class="big" onclick="saveDriver(${i === undefined ? 'null' : i})">Save</button><button class="big ghost" onclick="closeModal()">Cancel</button>`);
+}
+async function saveDriver(i){
+  const old = i === null ? '' : LISTS.drivers[i].Name;
+  try {await call('adminDriverSave', old, $('d_n').value, $('d_p').value, $('d_a').value === '1'); closeModal(); toast('Saved'); reload()} catch(e) {toast(e.message)}
+}
+async function rmDriver(i){
+  const n = LISTS.drivers[i].Name;
+  if (!confirm('Remove ' + n + '? They will no longer be able to log in. Their past entries stay on record.')) return;
+  try {await call('adminDriverRemove', n); toast('Driver removed'); reload()} catch(e) {toast(e.message)}
+}
+async function addBus(){try {await call('adminBusAdd', $('nb').value); toast('Bus added'); reload()} catch(e) {toast(e.message)}}
+async function rmBus(i){
+  const b = LISTS.buses[i]; if (!confirm('Remove bus ' + b + ' from the list?')) return;
+  try {await call('adminBusRemove', b); toast('Bus removed'); reload()} catch(e) {toast(e.message)}
+}
+
+/* ---------- modal ---------- */
+function openModal(h){$('sheet').innerHTML = h; $('modal').style.display = 'flex'}
+function closeModal(){$('modal').style.display = 'none'}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (PIN) {api('adminLogin', PIN).then(start).catch(e => loginView(/Wrong office PIN/.test(e.message) ? '' : e.message))} else loginView();
+</script>
+</body>
+</html>
